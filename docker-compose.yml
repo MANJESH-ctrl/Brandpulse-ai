@@ -1,0 +1,55 @@
+# docker-compose.yml
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: brandpulse-ai:latest
+    container_name: brandpulse-ai
+
+    ports:
+      - "8000:8000"
+
+    # ── Persistent storage — DB survives container restarts ───────────────────
+    volumes:
+      - brandpulse_data:/app/data
+
+    # ── Environment ───────────────────────────────────────────────────────────
+    env_file:
+      - .env
+    environment:
+      # Override DB path to use the mounted volume
+      DATABASE_URL: sqlite+aiosqlite:////app/data/brandpulse.db
+
+    # ── Restart policy — auto-recovers from crashes ───────────────────────────
+    restart: unless-stopped
+
+    # ── Resource limits — prevents runaway memory on a small EC2 instance ─────
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+    # ── Healthcheck — Docker knows if app is actually ready ───────────────────
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+      start_period: 15s
+
+    # ── Logging — keeps logs from eating disk on the server ───────────────────
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+# Named volume — Docker manages this, persists across compose down/up
+volumes:
+  brandpulse_data:
+    driver: local

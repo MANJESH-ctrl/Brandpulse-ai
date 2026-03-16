@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrandPulse AI</title>
+  <link rel="stylesheet" href="/static/css/retro.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <div id="header">
+    <div id="app-name">BRANDPULSE AI</div>
+    <div id="header-sub">BRAND INTELLIGENCE SYSTEM</div>
+    <div id="header-api-status">● CONNECTING</div>
+  </div>
+
+
+  <!-- ── TICKER ─────────────────────────────────────── -->
+  <div id="ticker">
+    <div class="ticker-item">
+      <span class="ticker-label">Brands</span>
+      <span class="ticker-val" id="tk-brands">—</span>
+    </div>
+    <div class="ticker-item">
+      <span class="ticker-label">Posts Analyzed</span>
+      <span class="ticker-val" id="tk-posts">—</span>
+    </div>
+    <div class="ticker-item">
+      <span class="ticker-label">Active Alerts</span>
+      <span class="ticker-val" id="tk-alerts">—</span>
+    </div>
+    <div class="ticker-item">
+      <span class="ticker-label">Sentiment Model</span>
+      <span class="ticker-val">groq/llama-3.3-70b</span>
+    </div>
+    <div class="ticker-item">
+      <span class="ticker-label">Pipeline</span>
+      <span class="ticker-val">LangGraph</span>
+    </div>
+  </div>
+
+
+  <!-- ── NAV ────────────────────────────────────────── -->
+  <div id="nav">
+    <button type="button" class="tab active" data-page="dashboard">Dashboard</button>
+    <button type="button" class="tab" data-page="analyze">Analyze</button>
+    <button type="button" class="tab" data-page="results">Results</button>
+    <button type="button" class="tab" data-page="brands">Brands</button>
+    <button type="button" class="tab" data-page="alerts">Alerts</button>
+  </div>
+
+
+  <!-- ── CONTENT ────────────────────────────────────── -->
+  <div id="content">
+
+
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: DASHBOARD
+    ═══════════════════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+
+
+      <div class="g4 mb20">
+        <div class="metric-card">
+          <div class="m-label">Brands Monitored</div>
+          <div class="m-value" id="db-total-brands">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Total Posts Analyzed</div>
+          <div class="m-value" id="db-total-posts">—</div>
+        </div>
+        <div class="metric-card neg">
+          <div class="m-label">Avg Negative Rate</div>
+          <div class="m-value" id="db-avg-negative">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Active Crisis Alerts</div>
+          <div class="m-value" id="db-active-alerts">—</div>
+        </div>
+      </div>
+
+
+      <div class="section-hdr">Brand Registry</div>
+      <div id="dashboard-brands">
+        <div class="status-line">Loading...</div>
+      </div>
+
+
+    </div>
+
+
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: ANALYZE
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-analyze">
+
+
+      <div class="section-hdr mb16">Run Brand Analysis</div>
+
+
+      <div class="g2">
+
+
+        <!-- Form -->
+        <div>
+          <div class="field">
+            <label>Brand Name *</label>
+            <input type="text" id="brand-name-input" placeholder="Tesla, Apple, Notion...">
+          </div>
+          <div class="field">
+            <label>Additional Keywords</label>
+            <input type="text" id="keywords-input" placeholder="customer service, price, quality...">
+          </div>
+          <div class="field">
+            <label>Platforms</label>
+            <label class="check-row"><input type="checkbox" class="platform-check" value="reddit" checked> Reddit</label>
+            <label class="check-row"><input type="checkbox" class="platform-check" value="hackernews" checked> Hacker News</label>
+            <label class="check-row"><input type="checkbox" class="platform-check" value="youtube"> YouTube</label>
+          </div>
+          <div class="field">
+            <label>Posts per Platform — <strong id="limit-label">100</strong></label>
+            <input type="range" id="limit-input" min="10" max="100" step="10" value="50">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;">
+              <span>10(fast)</span><span>100(accurate)</span>
+            </div>
+          </div>
+          <button type="button" class="btn" id="run-btn" onclick="submitAnalysis()" style="width:100%;margin-top:4px;">
+            Run Analysis
+          </button>
+        </div>
+
+
+        <!-- Progress -->
+        <div>
+          <div class="field">
+            <label>Job Status</label>
+            <div style="font-size:22px;font-weight:600;letter-spacing:2px;padding:10px 0;color:var(--text);" id="analyze-status-text">IDLE</div>
+          </div>
+
+
+          <div class="field">
+            <label>Progress</label>
+            <div class="progress-track">
+              <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+            </div>
+            <div class="status-line" id="progress-text">Awaiting submission...</div>
+          </div>
+
+
+          <div id="analyze-msg" class="mb12"></div>
+
+
+          <hr class="sep">
+
+
+          <div class="pipeline-list">
+            <div class="p-step"><span class="p-num">1.</span><span>COLLECT — Async scrape Reddit / HN / YouTube</span></div>
+            <div class="p-step"><span class="p-num">2.</span><span>STORE — Persist raw posts to SQLite</span></div>
+            <div class="p-step"><span class="p-num">3.</span><span>PROCESS — Clean, deduplicate, engagement score</span></div>
+            <div class="p-step"><span class="p-num">4.</span><span>ANALYZE — Groq Llama-3.3-70B LLM sentiment</span></div>
+            <div class="p-step"><span class="p-num">5.</span><span>INSIGHTS — Groq LLM brand intelligence report</span></div>
+            <div class="p-step"><span class="p-num">6.</span><span>CRISIS — Negative % threshold detection</span></div>
+          </div>
+
+
+          <hr class="sep">
+
+
+          <div id="job-id-row" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:10px;color:var(--muted);letter-spacing:1px;">JOB ID</span>
+            <span class="code-display" id="job-id-display">—</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="navigate('results')">View Results →</button>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: RESULTS
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-results">
+
+
+      <div class="section-hdr mb16">Analysis Results</div>
+
+
+      <div class="inline-row mb16">
+        <div class="grow">
+          <div class="field" style="margin-bottom:0;">
+            <label>Job ID</label>
+            <input type="text" id="result-job-input" placeholder="Paste job_id here...">
+          </div>
+        </div>
+        <button type="button" class="btn" onclick="loadResults()" style="align-self:flex-end;">Load</button>
+      </div>
+
+
+      <div id="results-msg" class="mb12"></div>
+
+
+      <div id="results-content" style="display:none;">
+
+
+        <!-- Brand + meta -->
+        <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="font-size:26px;font-weight:600;letter-spacing:2px;" id="res-brand">—</div>
+          <div style="font-size:11px;color:var(--muted);">
+            <span id="res-post-count">—</span> posts &nbsp;·&nbsp; completed <span id="res-completed">—</span>
+          </div>
+        </div>
+
+
+        <!-- Crisis banner -->
+        <div id="crisis-banner" class="alert-banner ok mb12">Checking...</div>
+
+
+        <!-- 4 metrics -->
+        <div class="g4 mb16">
+          <div class="metric-card pos">
+            <div class="m-label">Positive</div>
+            <div class="m-value" id="res-pos">—</div>
+          </div>
+          <div class="metric-card neg">
+            <div class="m-label">Negative</div>
+            <div class="m-value" id="res-neg">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-label">Neutral</div>
+            <div class="m-value" id="res-neu">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-label">Crisis Score</div>
+            <div class="m-value" id="res-crisis">—</div>
+          </div>
+        </div>
+
+
+        <!-- Charts row 1 -->
+        <div class="g2 mb12">
+          <div class="chart-wrap">
+            <div class="chart-label">Sentiment Distribution</div>
+            <div style="position:relative;height:240px;">
+              <canvas id="chart-donut"></canvas>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-label">Raw vs Engagement-Weighted</div>
+            <div style="position:relative;height:240px;">
+              <canvas id="chart-bar"></canvas>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Charts row 2 — FIX 1: g2 removed, JS assigns g2/mb12 dynamically -->
+        <div id="charts-row2" style="display:none;">
+          <div class="chart-wrap" id="aspect-section" style="display:none;">
+            <div class="chart-label">Aspect Sentiment</div>
+            <div style="position:relative;height:240px;">
+              <canvas id="chart-aspect"></canvas>
+            </div>
+          </div>
+          <div class="chart-wrap" id="platform-section" style="display:none;">
+            <div class="chart-label">Sentiment by Platform</div>
+            <div style="position:relative;height:240px;">
+              <canvas id="chart-platform"></canvas>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- AI Insight -->
+        <div id="insight-section" style="display:none;" class="mb16">
+          <div class="section-hdr mb8">AI Brand Intelligence</div>
+          <div class="insight-block" id="insight-text"></div>
+        </div>
+
+
+        <!-- Posts -->
+        <div>
+          <div class="section-hdr mb8">Post Sample — Top 30</div>
+          <div id="posts-container">
+            <div class="status-line">Loading posts...</div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: BRANDS
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-brands">
+
+
+      <div class="section-hdr mb16">Brand Intelligence</div>
+
+
+      <!-- Trend -->
+      <div class="mb20">
+        <div class="inline-row mb12">
+          <div class="grow">
+            <div class="field" style="margin-bottom:0;">
+              <label>Select Brand</label>
+              <select id="brand-trend-select" onchange="loadBrandTrend(this.value)"></select>
+            </div>
+          </div>
+        </div>
+        <div id="trend-chart-area">
+          <div class="status-line">Loading brands...</div>
+        </div>
+      </div>
+
+
+      <!-- History Table -->
+      <div class="mb20">
+        <div class="section-hdr mb8">Analysis History — <span id="history-brand-name">—</span></div>
+        <div id="history-table">
+          <div class="status-line">Select a brand above.</div>
+        </div>
+      </div>
+
+
+      <!-- Compare -->
+      <div>
+        <div class="section-hdr mb12">Multi-Brand Comparison</div>
+        <div class="field">
+          <label>Select Brands (hold Ctrl, 2–5)</label>
+          <select id="brand-compare-select" multiple size="5" style="height:100px;"></select>
+        </div>
+        <button type="button" class="btn" onclick="compareBrands()">Compare Selected</button>
+        <div id="compare-msg" class="mt8"></div>
+        <div id="compare-result" class="mb12" style="margin-top:12px;"></div>
+      </div>
+    </div><!-- /page-brands -->
+
+
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: ALERTS
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-alerts">
+
+
+      <div class="section-hdr mb16">Crisis Alerts</div>
+
+
+      <div class="inline-row mb16">
+        <div class="grow">
+          <div class="field" style="margin-bottom:0;">
+            <label>Filter by Brand (blank = all)</label>
+            <input type="text" id="alert-brand-filter" placeholder="e.g. Tesla">
+          </div>
+        </div>
+        <label class="check-row" style="white-space:nowrap;align-self:flex-end;padding-bottom:1px;">
+          <input type="checkbox" id="alert-unack-only"> Unacknowledged only
+        </label>
+        <button type="button" class="btn" onclick="loadAlertsPage()" style="align-self:flex-end;">Filter</button>
+      </div>
+
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;" id="alert-count">—</div>
+      <div id="alerts-msg"></div>
+      <div id="alerts-container">
+        <div class="status-line">Loading...</div>
+      </div>
+
+
+    </div><!-- /page-alerts -->
+
+
+  </div><!-- /content -->
+
+
+  <!-- ── FOOTER ──────────────────────────────────────── -->
+  <div id="footer">
+    <span class="fdot" id="footer-dot"></span>
+    <span id="footer-api">API: Connecting...</span>
+    <span>·</span>
+    <span>BrandPulse AI v0.2.0</span>
+    <span>·</span>
+    <span id="footer-page">DASHBOARD</span>
+    <span style="margin-left:auto;" id="footer-clock">—</span>
+  </div>
+
+
+</div><!-- /app -->
+
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

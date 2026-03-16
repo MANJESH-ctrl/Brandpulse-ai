@@ -1,37 +1,50 @@
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
-class Config:
-    # Reddit API Configuration
-    REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
-    REDDIT_CLIENT_SECRET = os.getenv('REDDIT_CLIENT_SECRET')
-    REDDIT_USER_AGENT = os.getenv('REDDIT_USER_AGENT', 'SentimentAnalysisBot/1.0')
-    
-    # YouTube API Configuration
-    YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
-    
-    # Data Storage
-    DATA_STORAGE_PATH = os.getenv('DATA_STORAGE_PATH', './outputs/raw_data')
-    
-    @classmethod
-    def validate_config(cls):
-        """Validate that all required configurations are present."""
-        errors = []
-        
-        # Only validate Reddit if we're using it
-        if not cls.REDDIT_CLIENT_ID:
-            errors.append("REDDIT_CLIENT_ID is missing")
-        if not cls.REDDIT_CLIENT_SECRET:
-            errors.append("REDDIT_CLIENT_SECRET is missing")
-        if not cls.YOUTUBE_API_KEY:
-            errors.append("YOUTUBE_API_KEY is missing")
-            
-        if errors:
-            raise ValueError(f"Configuration errors: {', '.join(errors)}")
+# src/utils/config.py
+from functools import lru_cache
+from typing import Optional
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # ── App ────────────────────────────────────────────────────────────────────
+    app_name: str = "BrandPulse AI"
+    app_version: str = "0.2.0"
+    debug: bool = False
+    log_level: str = "INFO" 
+
+    # ── Database ──────────────────────────────────────────────────────────────
+    database_url: str = "sqlite+aiosqlite:////app/data/brandpulse.db"
+
+    # ── Groq ──────────────────────────────────────────────────────────────────
+    groq_api_key: str
+    groq_model_fast: str = "llama-3.1-8b-instant"
+    sentiment_model: str = "groq/llama-3.3-70b-versatile"
+
+    # ── Cerebras (optional — sentiment fallback) ──────────────────────────────
+    cerebras_api_key: Optional[str] = None
+
+    # ── Reddit ────────────────────────────────────────────────────────────────
+    reddit_client_id: str
+    reddit_client_secret: str
+    reddit_user_agent: str = "BrandPulse/0.2.0"
+
+    # ── YouTube ───────────────────────────────────────────────────────────────
+    youtube_api_key: str
+
+    # ── Pipeline ──────────────────────────────────────────────────────────────
+    max_posts_per_platform: int = 100
 
 
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+# Module-level singleton — imported as `from src.utils.config import settings`
+settings = get_settings()
