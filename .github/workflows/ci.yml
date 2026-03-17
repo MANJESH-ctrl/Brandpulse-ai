@@ -62,11 +62,11 @@ jobs:
 
     # Fake secrets — no real keys needed, tests are fully mocked
     env:
-      DATABASE_URL: sqlite+aiosqlite:///:memory:
-      GROQ_API_KEY: test-groq-key
-      REDDIT_CLIENT_ID: test-reddit-id
-      REDDIT_CLIENT_SECRET: test-reddit-secret
-      YOUTUBE_API_KEY: test-yt-key
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+      GROQ_API_KEY: "test-groq-key"
+      REDDIT_CLIENT_ID: "test-reddit-id"
+      REDDIT_CLIENT_SECRET: "test-reddit-secret"
+      YOUTUBE_API_KEY: "test-yt-key"
 
     steps:
       - name: Checkout
