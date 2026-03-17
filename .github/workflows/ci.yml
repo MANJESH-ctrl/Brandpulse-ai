@@ -208,7 +208,7 @@ jobs:
             # docker-compose.prod.yml uses $DEPLOY_IMAGE instead of build block
             DEPLOY_IMAGE=$IMAGE docker-compose \
               -f docker-compose.prod.yml \
-              up -d --no-build
+              up -d --pull never
 
             # Prune old images to keep disk clean
             docker image prune -f
