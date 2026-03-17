@@ -113,7 +113,16 @@ async function checkHealth() {
 
 async function loadDashboard() {
   const container = document.getElementById('dashboard-brands');
-  container.innerHTML = '<div class="status-line">Loading...</div>';
+
+  // Show zeros immediately — no dashes on first load
+  document.getElementById('db-total-brands').textContent  = '0';
+  document.getElementById('db-total-posts').textContent   = '0';
+  document.getElementById('db-active-alerts').textContent = '0';
+  document.getElementById('db-avg-negative').textContent  = '—';
+  document.getElementById('tk-brands').textContent        = '0';
+  document.getElementById('tk-posts').textContent         = '0';
+  document.getElementById('tk-alerts').textContent        = '0';
+  
 
 
   const [brands, alerts] = await Promise.all([
