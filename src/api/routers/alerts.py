@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
 from src.api.schemas import CrisisAlertResponse
 from src.database.models import CrisisAlert

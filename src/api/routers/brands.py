@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 from sqlalchemy.orm import joinedload
 
-from src.api.schemas import BrandSummary, BrandCompareResponse
+from src.api.schemas import BrandCompareResponse, BrandSummary
 from src.database.models import AnalysisResult
 from src.database.session import get_db
 from src.utils.logger import get_logger
@@ -96,7 +96,7 @@ async def compare_brands(
                 {
                     "brand_name": brand,
                     "available": False,
-                    "message": f"No analysis found for '{brand}'. Run an analysis first.",
+                    "message": f"No analysis found for '{brand}'.",
                 }
             )
             continue

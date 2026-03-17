@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
-from src.api.schemas import FullAnalysisResult, CrisisAlertResponse, TrendPoint
-from src.database.models import AnalysisJob, AnalysisResult, CrisisAlert, JobStatus
+from src.api.schemas import FullAnalysisResult
+from src.database.models import (
+    AnalysisJob,
+    AnalysisResult,
+    CollectedPost,
+    JobStatus,
+)
 from src.database.session import get_db
 from src.utils.logger import get_logger
-
-from src.database.models import CollectedPost
-from sqlalchemy import func
 
 router = APIRouter(prefix="/api", tags=["Results"])
 logger = get_logger(__name__)
@@ -47,7 +49,6 @@ async def get_analysis_result(
         )
 
     dist = result.sentiment_distribution or {}
-    neg = dist.get("negative", 0.0)
     crisis_score = result.crisis_score or 0.0
     crisis_triggered = crisis_score >= 1.0
 

@@ -6,7 +6,7 @@ never complains about missing keys. Then builds an in-memory SQLite DB and
 a FastAPI TestClient.
 """
 
-import os, sys
+import os
 
 # ── Fake env vars — must happen before ANY src import ────────────────────────
 _FAKE_ENV = {
@@ -21,18 +21,21 @@ for k, v in _FAKE_ENV.items():
     os.environ.setdefault(k, v)
 
 # Clear the lru_cache so Settings re-reads env vars
-from src.utils.config import get_settings
+from src.utils.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
 
-import pytest
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+import pytest  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-from src.database.models import Base
-from src.api.main import app
-from src.database.session import get_db
-
+from src.api.main import app  # noqa: E402
+from src.database.models import Base  # noqa: E402
+from src.database.session import get_db  # noqa: E402
 
 # ── In-memory async engine shared across the test session ────────────────────
 _test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)

@@ -1,5 +1,7 @@
-import asyncpraw
 from typing import Any
+
+import asyncpraw
+
 from src.data.collectors.base_collector import BaseCollector
 from src.utils.config import settings
 

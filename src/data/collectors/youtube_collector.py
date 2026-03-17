@@ -1,5 +1,7 @@
-import httpx
 from typing import Any
+
+import httpx
+
 from src.data.collectors.base_collector import BaseCollector
 from src.utils.config import settings
 

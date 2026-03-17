@@ -1,20 +1,17 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from src.utils.config import settings
-from src.utils.logger import setup_logging, get_logger
-from src.database.session import init_db
-from src.api.routers.analysis import router as analysis_router
-from src.api.routers.results import router as results_router  # ← ADD
-from src.api.routers.brands import router as brands_router
-
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import os
+from fastapi.staticfiles import StaticFiles
 
 from src.api.routers.alerts import router as alerts_router
-
+from src.api.routers.analysis import router as analysis_router
+from src.api.routers.brands import router as brands_router
+from src.api.routers.results import router as results_router  # ← ADD
+from src.database.session import init_db
+from src.utils.config import settings
+from src.utils.logger import get_logger, setup_logging
 
 logger = get_logger(__name__)
 
@@ -39,7 +36,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="AI-powered brand intelligence platform — zero cost, full production stack.",
+    description="AI-powered brand intelligence platform — zero cost, full production stack.",  # noqa: E501
     lifespan=lifespan,
 )
 

@@ -1,12 +1,12 @@
-from langgraph.graph import StateGraph, END
+from langgraph.graph import END, StateGraph
 
-from src.agents.state import AnalysisState
 from src.agents.nodes import (
-    node_process_text,
     node_analyze_sentiment,
-    node_generate_insights,
     node_detect_crisis,
+    node_generate_insights,
+    node_process_text,
 )
+from src.agents.state import AnalysisState
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)

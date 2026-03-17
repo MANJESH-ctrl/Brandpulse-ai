@@ -1,5 +1,7 @@
-import httpx
 from typing import Any
+
+import httpx
+
 from src.data.collectors.base_collector import BaseCollector
 
 _HN_SEARCH = "https://hn.algolia.com/api/v1/search"

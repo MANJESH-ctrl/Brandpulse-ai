@@ -5,8 +5,9 @@ Uses _env_file=None to prevent pydantic-settings from reading the real .env.
 """
 
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
 from pydantic import ValidationError
 
 

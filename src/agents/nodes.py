@@ -1,18 +1,16 @@
 # src/agents/nodes.py
 import re
-from collections import Counter
 from typing import Any
 
-from openai import AsyncOpenAI
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
+from langchain_groq import ChatGroq
+from openai import AsyncOpenAI
 
 from src.agents.state import AnalysisState
-from src.analysis.sentiment_analyzer import SentimentAnalyzer
 from src.analysis.cache import get_cached, set_cached
+from src.analysis.sentiment_analyzer import SentimentAnalyzer
 from src.utils.config import settings
 from src.utils.logger import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -221,13 +219,13 @@ async def node_generate_insights(state: AnalysisState) -> AnalysisState:
     aspect_summary = (
         "\n".join(
             f"   - {aspect}: {data['count']} mentions, "
-            f"{data['positive'] * 100:.0f}% positive, {data['negative'] * 100:.0f}% negative"
+            f"{data['positive'] * 100:.0f}% positive, {data['negative'] * 100:.0f}% negative"  # noqa: E501
             for aspect, data in aspects.items()
         )
         or "   No aspect data available."
     )
 
-    prompt = f"""You are a brand intelligence analyst. Analyze this data and provide actionable insights.
+    prompt = f"""You are a brand intelligence analyst. Analyze this data and provide actionable insights.  # noqa: E501
 
 BRAND: {brand}
 TOTAL POSTS ANALYZED: {total}
@@ -256,7 +254,7 @@ Keep it factual, specific, and under 300 words total."""
     themes = []
     recommendations = []
 
-    # ── Primary: Cerebras qwen-3-235b-a22b-instruct-2507 ──────────────────────────────────────
+    # ── Primary: Cerebras qwen-3-235b-a22b-instruct-2507 ─────────────────────
     cerebras_key = getattr(settings, "cerebras_api_key", None)
     if cerebras_key:
         try:

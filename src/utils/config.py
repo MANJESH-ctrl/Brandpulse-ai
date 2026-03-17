@@ -1,6 +1,6 @@
 # src/utils/config.py
 from functools import lru_cache
-from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     sentiment_model: str = "groq/llama-3.3-70b-versatile"
 
     # ── Cerebras (optional — sentiment fallback) ──────────────────────────────
-    cerebras_api_key: Optional[str] = None
+    cerebras_api_key: str | None = None
 
     # ── Reddit ────────────────────────────────────────────────────────────────
     reddit_client_id: str

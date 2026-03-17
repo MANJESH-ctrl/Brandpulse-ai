@@ -4,11 +4,12 @@ Tests node_process_text and node_detect_crisis.
 """
 
 import pytest
+
 from src.agents.nodes import (
-    node_process_text,
-    node_detect_crisis,
     _clean_text,
     _compute_engagement,
+    node_detect_crisis,
+    node_process_text,
 )
 
 

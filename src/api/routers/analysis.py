@@ -1,11 +1,10 @@
 import asyncio
-import re
+from datetime import UTC, datetime
 from uuid import uuid4
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.schemas import (
     AnalyzeRequest,
@@ -13,9 +12,9 @@ from src.api.schemas import (
     JobStatusResponse,
     PostsResponse,
 )
+from src.data.collectors import HackerNewsCollector, RedditCollector, YouTubeCollector
 from src.database.models import AnalysisJob, CollectedPost, JobStatus
-from src.database.session import get_db, AsyncSessionLocal
-from src.data.collectors import RedditCollector, YouTubeCollector, HackerNewsCollector
+from src.database.session import AsyncSessionLocal, get_db
 from src.utils.logger import get_logger
 
 router = APIRouter(prefix="/api", tags=["Analysis"])
@@ -54,7 +53,7 @@ async def start_analysis(
     return AnalyzeResponse(
         job_id=job_id,
         status=JobStatus.PENDING,
-        message=f"Analysis started for '{request.brand_name}'. Poll the status URL for progress.",
+        message=f"Analysis started for '{request.brand_name}'. Poll the status URL.",
         poll_url=f"/api/status/{job_id}",
     )
 
@@ -142,7 +141,7 @@ async def _update_job(
             if error:
                 job.error_message = error
             if completed:
-                job.completed_at = datetime.now(timezone.utc)
+                job.completed_at = datetime.now(UTC)
             await db.commit()
 
 

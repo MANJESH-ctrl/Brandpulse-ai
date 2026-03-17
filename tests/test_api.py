@@ -3,19 +3,16 @@ Integration tests for every FastAPI endpoint.
 All mocked — no real DB rows, no real pipeline. Fast.
 """
 
-import pytest
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone
-from unittest.mock import patch, AsyncMock
 
 from src.database.models import (
     AnalysisJob,
     AnalysisResult,
     CrisisAlert,
-    CollectedPost,
     JobStatus,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -24,7 +21,7 @@ async def _seed_job(db_session, *, status=JobStatus.DONE, brand="TestBrand"):
     """Insert a complete job + result so GET endpoints have data."""
     Session = db_session
     job_id = str(uuid4())
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     async with Session() as s:
         job = AnalysisJob(
@@ -84,7 +81,7 @@ async def _seed_alert(db_session, *, brand="TestBrand"):
 
 
 class TestPostAnalyze:
-    from unittest.mock import patch, AsyncMock
+    from unittest.mock import AsyncMock, patch
 
     async def test_returns_202_with_job_id(self, client):
         with patch(

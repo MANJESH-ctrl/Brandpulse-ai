@@ -1,14 +1,15 @@
 import enum
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy import (
+    JSON,
     Column,
+    DateTime,
+    Float,
+    ForeignKey,
     Integer,
     String,
-    Float,
-    DateTime,
     Text,
-    JSON,
-    ForeignKey,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -17,7 +18,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class JobStatus(str, enum.Enum):
+class JobStatus(enum.StrEnum):
     PENDING = "pending"
     COLLECTING = "collecting"
     PROCESSING = "processing"
@@ -37,7 +38,7 @@ class AnalysisJob(Base):
     keywords = Column(String, nullable=True)
     status = Column(String, default=JobStatus.PENDING)
     progress_message = Column(String, nullable=True)  # "Collecting Reddit posts..."
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     completed_at = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
 
@@ -63,7 +64,7 @@ class AnalysisResult(Base):
     crisis_triggered = Column(Integer, default=0)  # add this to AnalysisResult
     post_count = Column(Integer, default=0)
     platform_breakdown = Column(JSON)  # per-platform stats
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     model_used = Column(String, nullable=True)
 
     job = relationship("AnalysisJob", back_populates="result")
@@ -94,7 +95,7 @@ class CollectedPost(Base):
     platform_meta = Column(
         JSON, nullable=True
     )  # upvotes, views, likes — platform specific
-    collected_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    collected_at = Column(DateTime, default=lambda: datetime.now(UTC))
     is_sarcastic = Column(Integer, nullable=True)  # 0 or 1
     aspect = Column(String, nullable=True)  # product/pricing/service/etc
     brand_relevance = Column(Float, nullable=True)  # 0.0–1.0
@@ -111,7 +112,7 @@ class CrisisAlert(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     brand_name = Column(String, nullable=False, index=True)
-    triggered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    triggered_at = Column(DateTime, default=lambda: datetime.now(UTC))
     spike_percentage = Column(Float)  # how much above baseline
     baseline_score = Column(Float)  # brand's normal negative %
     current_score = Column(Float)  # this analysis's negative %

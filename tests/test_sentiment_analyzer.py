@@ -4,6 +4,7 @@ Tests scoring math, fallback output, build_output, filtering, distribution.
 """
 
 import pytest
+
 from src.analysis.sentiment_analyzer import SentimentAnalyzer
 
 

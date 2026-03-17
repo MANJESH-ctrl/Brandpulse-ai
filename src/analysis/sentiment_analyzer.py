@@ -1,10 +1,9 @@
 # src/analysis/sentiment_analyzer.py
 import asyncio
 import json
+
 import structlog
 from groq import AsyncGroq
-from typing import Dict, List, Optional
-
 
 logger = structlog.get_logger()
 
@@ -42,7 +41,7 @@ class SentimentAnalyzer:
     BATCH_SIZE = 12
     MAX_CHARS = 500
 
-    def __init__(self, groq_api_key: str, cerebras_api_key: Optional[str] = None):
+    def __init__(self, groq_api_key: str, cerebras_api_key: str | None = None):
         self.groq = AsyncGroq(api_key=groq_api_key)
         self._cerebras = None
         if cerebras_api_key:
@@ -56,7 +55,7 @@ class SentimentAnalyzer:
             except ImportError:
                 logger.warning("cerebras_skip", reason="openai package not installed")
 
-    async def analyze(self, posts: List[Dict], brand_name: str) -> Dict:
+    async def analyze(self, posts: list[dict], brand_name: str) -> dict:
         if not posts:
             return self._empty_result()
 
@@ -69,7 +68,7 @@ class SentimentAnalyzer:
             "llm_sentiment_start", brand=brand_name, total=len(posts), model=primary
         )
 
-        by_platform: Dict[str, List[Dict]] = {}
+        by_platform: dict[str, list[dict]] = {}
         for post in posts:
             by_platform.setdefault(post.get("platform", "unknown"), []).append(post)
 
@@ -92,8 +91,8 @@ class SentimentAnalyzer:
         return self._build_output(llm_results, posts, brand_name)
 
     async def _batch_with_fallback(
-        self, posts: List[Dict], platform: str, brand_name: str
-    ) -> List[Dict]:
+        self, posts: list[dict], platform: str, brand_name: str
+    ) -> list[dict]:
 
         # ── Primary: Cerebras {self.PRIMARY_MODEL} ────────────────────────────────
         if self._cerebras:
@@ -132,8 +131,8 @@ class SentimentAnalyzer:
         return self._neutral_fallback(posts)
 
     async def _call_cerebras(
-        self, posts: List[Dict], brand_name: str, platform: str
-    ) -> List[Dict]:
+        self, posts: list[dict], brand_name: str, platform: str
+    ) -> list[dict]:
         resp = await self._cerebras.chat.completions.create(
             model=self.PRIMARY_MODEL,
             messages=[
@@ -154,8 +153,8 @@ class SentimentAnalyzer:
         return json.loads(resp.choices[0].message.content).get("results", [])
 
     async def _call_groq(
-        self, posts: List[Dict], brand_name: str, platform: str
-    ) -> List[Dict]:
+        self, posts: list[dict], brand_name: str, platform: str
+    ) -> list[dict]:
         resp = await self.groq.chat.completions.create(
             model=self.FALLBACK_MODEL,
             messages=[
@@ -175,7 +174,7 @@ class SentimentAnalyzer:
         )
         return json.loads(resp.choices[0].message.content).get("results", [])
 
-    def _fmt(self, posts: List[Dict]) -> str:
+    def _fmt(self, posts: list[dict]) -> str:
         return json.dumps(
             [
                 {
@@ -195,7 +194,7 @@ class SentimentAnalyzer:
             ensure_ascii=False,
         )
 
-    def _neutral_fallback(self, posts: List[Dict]) -> List[Dict]:
+    def _neutral_fallback(self, posts: list[dict]) -> list[dict]:
         return [
             {
                 "post_id": p.get("id", ""),
@@ -211,8 +210,8 @@ class SentimentAnalyzer:
         ]
 
     def _build_output(
-        self, llm_results: List[Dict], original_posts: List[Dict], brand_name: str
-    ) -> Dict:
+        self, llm_results: list[dict], original_posts: list[dict], brand_name: str
+    ) -> dict:
         result_map = {r.get("post_id", ""): r for r in llm_results}
         relevant = [r for r in llm_results if r.get("brand_relevance", 1.0) >= 0.3]
         total = max(len(relevant), 1)
@@ -221,7 +220,7 @@ class SentimentAnalyzer:
         neg = sum(1 for r in relevant if r["sentiment"] == "negative")
         neu = sum(1 for r in relevant if r["sentiment"] == "neutral")
 
-        aspect_breakdown: Dict[str, Dict] = {}
+        aspect_breakdown: dict[str, dict] = {}
         for r in relevant:
             asp = r.get("aspect", "general")
             aspect_breakdown.setdefault(
@@ -277,7 +276,7 @@ class SentimentAnalyzer:
             "relevant_count": len(relevant),
         }
 
-    def _empty_result(self) -> Dict:
+    def _empty_result(self) -> dict:
         return {
             "distribution": {"positive": 0.0, "negative": 0.0, "neutral": 0.0},
             "posts": [],
