@@ -206,7 +206,7 @@ jobs:
 
             # Bring up with the production compose file
             # docker-compose.prod.yml uses $DEPLOY_IMAGE instead of build block
-            DEPLOY_IMAGE=$IMAGE docker-compose \
+            DEPLOY_IMAGE=$IMAGE docker compose \
               -f docker-compose.prod.yml \
               up -d --pull never
 
