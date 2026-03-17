@@ -25,7 +25,7 @@ env:
   PYTHON_VERSION: "3.12"
   AWS_REGION: ap-south-1
   IMAGE_NAME: brandpulse-ai
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  
 
 
 # JOB 1 — Lint
