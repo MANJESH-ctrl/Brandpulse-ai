@@ -43,7 +43,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pip-ruff-
 
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.15.5
 
       - name: Check formatting
         run: ruff format --check src/ tests/
