@@ -875,12 +875,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkHealth();
   setInterval(checkHealth, 30000);
 
-
   // Bind nav tabs
   document.querySelectorAll('[data-page]').forEach(el => {
     el.addEventListener('click', () => navigate(el.dataset.page));
   });
-
 
   // Range label
   const limitEl = document.getElementById('limit-input');
@@ -890,37 +888,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     limitEl.addEventListener('input', () => { limitLb.textContent = limitEl.value; });
   }
 
-
-  // Restore last job + check if it's still running after a refresh
+  // Restore last job or go straight to dashboard
   if (State.lastJobId) {
-      const el = document.getElementById('result-job-input');
-      const jd = document.getElementById('job-id-display');
-      const jr = document.getElementById('job-id-row');
-      if (el) el.value = State.lastJobId;
-      if (jd) jd.textContent = State.lastJobId;
-      if (jr) jr.style.display = 'flex';
+    const el = document.getElementById('result-job-input');
+    const jd = document.getElementById('job-id-display');
+    const jr = document.getElementById('job-id-row');
+    if (el) el.value = State.lastJobId;
+    if (jd) jd.textContent = State.lastJobId;
+    if (jr) jr.style.display = 'flex';
 
-    // Restore last job + check if still running after refresh
-    if (State.lastJobId) {
-        const el = document.getElementById('result-job-input');
-        const jd = document.getElementById('job-id-display');
-        const jr = document.getElementById('job-id-row');
-        if (el) el.value = State.lastJobId;
-        if (jd) jd.textContent = State.lastJobId;
-        if (jr) jr.style.display = 'flex';
-
-        // silently check if job is still in progress
-        const s = await API.getJobStatus(State.lastJobId);
-        if (s && !s.error && (s.status === 'collecting' || s.status === 'processing'
-            || s.status === 'analyzing' || s.status === 'pending')) {
-            navigate('analyze');
-            setMsg('analyze-msg', 'info', `Resumed: job ${State.lastJobId} still running...`);
-            pollJob(State.lastJobId);
-        } else {
-            navigate('dashboard');
-        }
+    // silently check if job is still in progress
+    const s = await API.getJobStatus(State.lastJobId);
+    if (s && !s.error && (s.status === 'collecting' || s.status === 'processing'
+        || s.status === 'analyzing' || s.status === 'pending')) {
+      navigate('analyze');
+      setMsg('analyze-msg', 'info', `Resumed: job ${State.lastJobId} still running...`);
+      pollJob(State.lastJobId);
     } else {
-        navigate('dashboard');
+      navigate('dashboard');
     }
+  } else {
+    navigate('dashboard'); 
   }
 });
