@@ -204,6 +204,9 @@ jobs:
             cd ~/brandpulse_ai
             export DEPLOY_IMAGE=$IMAGE
 
+            # Stop and remove old container if exists
+            docker compose -f docker-compose.prod.yml down || true
+
             # Bring up with the production compose file
             # docker-compose.prod.yml uses $DEPLOY_IMAGE instead of build block
             DEPLOY_IMAGE=$IMAGE docker compose \
