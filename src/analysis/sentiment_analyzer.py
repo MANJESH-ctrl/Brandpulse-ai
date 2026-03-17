@@ -61,7 +61,7 @@ class SentimentAnalyzer:
         if not posts:
             return self._empty_result()
 
-        primary = "gpt-oss-120b (cerebras)" if self._cerebras else "llama-3.3-70b-versatile (groq)"
+        primary = f"{self.PRIMARY_MODEL} (cerebras)" if self._cerebras else f"{self.FALLBACK_MODEL} (groq)"
         logger.info("llm_sentiment_start", brand=brand_name,
                     total=len(posts), model=primary)
 
@@ -90,7 +90,7 @@ class SentimentAnalyzer:
         self, posts: List[Dict], platform: str, brand_name: str
     ) -> List[Dict]:
 
-        # ── Primary: Cerebras qwen-3-235b-a22b-instruct-2507 ────────────────────────────────
+        # ── Primary: Cerebras {self.PRIMARY_MODEL} ────────────────────────────────
         if self._cerebras:
             for attempt in range(4):
                 try:
@@ -106,7 +106,7 @@ class SentimentAnalyzer:
                     logger.warning("cerebras_failed_using_groq", error=err)
                     break   # non-429 error — go straight to Groq
 
-        # ── Fallback: Groq llama-3.3-70b ──────────────────────────────────
+        # ── Fallback: Groq {self.FALLBACK_MODEL} ──────────────────────────────────
         for attempt in range(4):
             try:
                 return await self._call_groq(posts, brand_name, platform)

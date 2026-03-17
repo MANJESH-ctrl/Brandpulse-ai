@@ -17,9 +17,6 @@ services:
     # ── Environment ───────────────────────────────────────────────────────────
     env_file:
       - .env
-    environment:
-      # Override DB path to use the mounted volume
-      DATABASE_URL: sqlite+aiosqlite:////app/data/brandpulse.db
 
     # ── Restart policy — auto-recovers from crashes ───────────────────────────
     restart: unless-stopped

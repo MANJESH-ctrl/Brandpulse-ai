@@ -1,18 +1,17 @@
 # ── Stage 1: Builder ─────────────────────────────────────────────────────────
 # Install dependencies in an isolated stage so build tools
-# never make it into the final image
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# Install uv — much faster than pip for dependency resolution
+# Install uv 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy dependency files first (layer cache — only reinstalls when these change)
+# Copy dependency files first 
 COPY pyproject.toml .
 COPY README.md .
 
-# Install into an isolated prefix we'll copy later
+# Install into an isolated prefix and copy later
 RUN uv pip install --system --no-cache \
     fastapi uvicorn[standard] pydantic pydantic-settings \
     sqlalchemy aiosqlite \
@@ -23,7 +22,7 @@ RUN uv pip install --system --no-cache \
 
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-# Clean Python base — no build tools, no pip cache, nothing extra
+
 FROM python:3.12-slim AS runtime
 
 # Non-root user — running as root in a container is a security red flag
@@ -40,12 +39,12 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY src/ ./src/
 COPY frontend/ ./frontend/ 
 
-# Data directory with correct ownership (SQLite DB lives here)
+# Data directory with correct ownership 
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app
 
 USER appuser
 
-# Explicit port declaration — documents intent, used by orchestrators
+
 EXPOSE 8000
 
 # Healthcheck — Docker/ECS/K8s will restart container if this fails

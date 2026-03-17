@@ -1,0 +1,49 @@
+# docker-compose.prod.yml
+# Used by CI/CD on EC2 — pulls pre-built ECR image, never builds locally
+services:
+  api:
+    image: ${DEPLOY_IMAGE}          # injected by CI: ECR_REGISTRY/brandpulse-ai:SHA
+    container_name: brandpulse-ai
+
+    ports:
+      - "8000:8000"
+
+    # ── Persistent storage — DB survives container restarts ───────────────────
+    volumes:
+      - brandpulse_data:/app/data
+
+    # ── Environment — all secrets live in .env on the EC2 instance ───────────
+    env_file:
+      - .env
+
+    # ── Restart policy ────────────────────────────────────────────────────────
+    restart: unless-stopped
+
+    # ── Resource limits ───────────────────────────────────────────────────────
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+    # ── Healthcheck ───────────────────────────────────────────────────────────
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+      start_period: 15s
+
+    # ── Logging ───────────────────────────────────────────────────────────────
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+volumes:
+  brandpulse_data:
+    driver: local

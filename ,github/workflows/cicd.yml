@@ -1,0 +1,255 @@
+name: BrandPulse AI — CI/CD
+
+# ── Triggers ──────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel any in-progress run for the same branch — no stale deploys
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Shared env ────────────────────────────────────────────────────────────────
+env:
+  PYTHON_VERSION: "3.12"
+  AWS_REGION: ap-south-1
+  IMAGE_NAME: brandpulse-ai
+
+
+# JOB 1 — Lint
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-ruff-${{ hashFiles('pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-pip-ruff-
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Check formatting
+        run: ruff format --check src/ tests/
+
+      - name: Check linting
+        run: ruff check src/ tests/
+
+
+
+# JOB 2 — Test
+
+  test:
+    name: Test (pytest)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    # Fake secrets — no real keys needed, tests are fully mocked
+    env:
+      DATABASE_URL: sqlite+aiosqlite:///:memory:
+      GROQ_API_KEY: test-groq-key
+      REDDIT_CLIENT_ID: test-reddit-id
+      REDDIT_CLIENT_SECRET: test-reddit-secret
+      YOUTUBE_API_KEY: test-yt-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-test-${{ hashFiles('pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-pip-test-
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system \
+            fastapi uvicorn[standard] pydantic pydantic-settings \
+            sqlalchemy aiosqlite \
+            asyncpraw google-api-python-client httpx \
+            groq openai \
+            langchain langchain-groq langgraph \
+            python-dotenv structlog aiofiles \
+            pytest pytest-asyncio httpx anyio
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .pytest_cache/
+
+
+
+# JOB 3 — Build & Push to ECR
+# Only runs on push to main (not PRs)
+
+  docker:
+    name: Build & Push (ECR)
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    outputs:
+      image_tag: ${{ github.sha }}
+      ecr_registry: ${{ steps.login-ecr.outputs.registry }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG:     ${{ github.sha }}
+        run: |
+          # Build with both SHA tag and latest
+          docker build \
+            --tag $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG \
+            --tag $ECR_REGISTRY/${{ env.IMAGE_NAME }}:latest \
+            --label "git.sha=$IMAGE_TAG" \
+            --label "git.branch=${{ github.ref_name }}" \
+            --label "build.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            .
+
+          # Push both tags
+          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:latest
+
+          echo "Pushed: $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG"
+
+
+
+# JOB 4 — Deploy to EC2
+
+  deploy:
+    name: Deploy (EC2)
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment:
+      name: production
+      url: http://${{ secrets.EC2_HOST }}:8000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          port:     22
+          script: |
+            set -e
+
+            ECR_REGISTRY="${{ secrets.ECR_REGISTRY }}"
+            IMAGE_TAG="${{ github.sha }}"
+            IMAGE="$ECR_REGISTRY/brandpulse-ai:$IMAGE_TAG"
+
+            echo "==> Deploying $IMAGE_TAG"
+
+            # Login to ECR from the EC2 instance
+            aws ecr get-login-password --region ap-south-1 | \
+              docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            # Pull the exact SHA-tagged image (not :latest — deterministic)
+            docker pull $IMAGE
+
+            # Update .env IMAGE reference for compose
+            cd ~/brandpulse_ai
+            export DEPLOY_IMAGE=$IMAGE
+
+            # Bring up with the production compose file
+            # docker-compose.prod.yml uses $DEPLOY_IMAGE instead of build block
+            DEPLOY_IMAGE=$IMAGE docker-compose \
+              -f docker-compose.prod.yml \
+              up -d --no-build
+
+            # Prune old images to keep disk clean
+            docker image prune -f
+
+            echo "==> Deploy complete: $IMAGE_TAG"
+
+
+
+# JOB 5 — Verify
+
+  verify:
+    name: Verify (health check)
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - name: Wait for container to be ready
+        run: sleep 15
+
+      - name: Health check
+        run: |
+          echo "==> Hitting health endpoint..."
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://${{ secrets.EC2_HOST }}:8000/health)
+            echo "Attempt $i — HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "==> Health check passed"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "==> Health check FAILED after 5 attempts"
+          exit 1
+
+      - name: Print deploy summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Health | ✅ Passing |" >> $GITHUB_STEP_SUMMARY

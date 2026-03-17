@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO" 
 
     # ── Database ──────────────────────────────────────────────────────────────
-    database_url: str = "sqlite+aiosqlite:////app/data/brandpulse.db"
+    database_url: str 
 
     # ── Groq ──────────────────────────────────────────────────────────────────
     groq_api_key: str

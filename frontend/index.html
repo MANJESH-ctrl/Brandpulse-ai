@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BrandPulse AI</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/css/retro.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -35,7 +36,7 @@
     </div>
     <div class="ticker-item">
       <span class="ticker-label">Sentiment Model</span>
-      <span class="ticker-val">groq/llama-3.3-70b</span>
+      <span class="ticker-val">Cerebras / Groq</span>
     </div>
     <div class="ticker-item">
       <span class="ticker-label">Pipeline</span>
@@ -163,8 +164,8 @@
             <div class="p-step"><span class="p-num">1.</span><span>COLLECT — Async scrape Reddit / HN / YouTube</span></div>
             <div class="p-step"><span class="p-num">2.</span><span>STORE — Persist raw posts to SQLite</span></div>
             <div class="p-step"><span class="p-num">3.</span><span>PROCESS — Clean, deduplicate, engagement score</span></div>
-            <div class="p-step"><span class="p-num">4.</span><span>ANALYZE — Groq Llama-3.3-70B LLM sentiment</span></div>
-            <div class="p-step"><span class="p-num">5.</span><span>INSIGHTS — Groq LLM brand intelligence report</span></div>
+            <div class="p-step"><span class="p-num">4.</span><span>ANALYZE — Cerebras Qwen-235B sentiment (Groq fallback)</span></div>
+            <div class="p-step"><span class="p-num">5.</span><span>INSIGHTS — Cerebras LLM brand intelligence (Groq fallback)</span></div>
             <div class="p-step"><span class="p-num">6.</span><span>CRISIS — Negative % threshold detection</span></div>
           </div>
 
