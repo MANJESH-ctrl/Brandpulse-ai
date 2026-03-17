@@ -25,7 +25,7 @@ class HackerNewsCollector(BaseCollector):
         collected: list[dict[str, Any]] = []
 
         tag_strategies = [
-            ("story",   limit // 2),
+            ("story", limit // 2),
             ("comment", limit // 2),
         ]
 
@@ -36,27 +36,30 @@ class HackerNewsCollector(BaseCollector):
                     if keywords:
                         query += f" {keywords.split(',')[0].strip()}"
 
-                    resp = await client.get(_HN_SEARCH, params={
-                        "query":       query,
-                        "tags":        tag,
-                        "hitsPerPage": per_limit,
-                    })
+                    resp = await client.get(
+                        _HN_SEARCH,
+                        params={
+                            "query": query,
+                            "tags": tag,
+                            "hitsPerPage": per_limit,
+                        },
+                    )
                     resp.raise_for_status()
 
                     for hit in resp.json().get("hits", []):
-                        text  = hit.get("comment_text") or hit.get("story_text") or ""
+                        text = hit.get("comment_text") or hit.get("story_text") or ""
                         title = hit.get("title") or hit.get("story_title") or ""
 
                         post = self._make_post(
                             brand_name=brand_name,
-                            post_id=hit.get("objectID", ""),     # ← FIXED
+                            post_id=hit.get("objectID", ""),  # ← FIXED
                             title=title,
                             text=text,
                             platform_meta={
-                                "hn_id":        hit.get("objectID"),
-                                "points":       hit.get("points", 0),
+                                "hn_id": hit.get("objectID"),
+                                "points": hit.get("points", 0),
                                 "num_comments": hit.get("num_comments", 0),
-                                "author":       hit.get("author", ""),
+                                "author": hit.get("author", ""),
                                 "content_type": tag,
                                 "url": f"https://news.ycombinator.com/item?id={hit.get('objectID')}",
                             },

@@ -34,7 +34,6 @@ class RedditCollector(BaseCollector):
             client_secret=settings.reddit_client_secret,
             user_agent=settings.reddit_user_agent,
         ) as reddit:
-
             for query in strategies:
                 if len(collected) >= limit:
                     break
@@ -51,15 +50,15 @@ class RedditCollector(BaseCollector):
                     ):
                         post = self._make_post(
                             brand_name=brand_name,
-                            post_id=submission.id,        
+                            post_id=submission.id,
                             title=submission.title,
                             text=submission.selftext,
                             platform_meta={
-                                "score":        submission.score,
-                                "upvotes":      submission.ups,
+                                "score": submission.score,
+                                "upvotes": submission.ups,
                                 "num_comments": submission.num_comments,
-                                "subreddit":    str(submission.subreddit),
-                                "url":          submission.url,
+                                "subreddit": str(submission.subreddit),
+                                "url": submission.url,
                             },
                         )
 

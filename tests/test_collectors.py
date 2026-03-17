@@ -12,6 +12,7 @@ from src.data.collectors.youtube_collector import YouTubeCollector
 
 # ── BaseCollector._build_query ───────────────────────────────────────────────
 
+
 class TestBuildQuery:
     @pytest.fixture
     def collector(self):
@@ -50,6 +51,7 @@ class TestBuildQuery:
 
 
 # ── BaseCollector._make_post ─────────────────────────────────────────────────
+
 
 class TestMakePost:
     @pytest.fixture
@@ -104,6 +106,7 @@ class TestMakePost:
 
 # ── BaseCollector._clean_text ────────────────────────────────────────────────
 
+
 class TestCleanText:
     @pytest.fixture
     def collector(self):
@@ -121,6 +124,7 @@ class TestCleanText:
 
 
 # ── 3-tier fallback strategy ─────────────────────────────────────────────────
+
 
 class TestRedditStrategies:
     def test_three_strategies_generated(self):

@@ -16,9 +16,9 @@ class AnalysisState(TypedDict):
 
     # ── Node 2 output: sentiment analysis ────────────────────
     analyzed_posts: list[dict[str, Any]]
-    sentiment_distribution: dict[str, float]   
-    weighted_sentiment: dict[str, float]        
-    aspect_results: dict[str, Any]             
+    sentiment_distribution: dict[str, float]
+    weighted_sentiment: dict[str, float]
+    aspect_results: dict[str, Any]
 
     # ── Node 3 output: LLM insights ──────────────────────────
     insight_summary: str
@@ -26,10 +26,10 @@ class AnalysisState(TypedDict):
     recommendations: list[str]
 
     # ── Node 4 output: crisis detection ──────────────────────
-    crisis_score: float          # 0.0 = normal, >1.0 = alert
+    crisis_score: float  # 0.0 = normal, >1.0 = alert
     crisis_triggered: bool
     crisis_details: dict[str, Any]
 
     # ── Control flow ─────────────────────────────────────────
-    errors: list[str]            # non-fatal errors accumulate here
-    current_node: str            # for progress tracking
+    errors: list[str]  # non-fatal errors accumulate here
+    current_node: str  # for progress tracking

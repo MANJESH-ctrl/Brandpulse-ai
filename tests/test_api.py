@@ -8,10 +8,17 @@ from uuid import uuid4
 from datetime import datetime, timezone
 from unittest.mock import patch, AsyncMock
 
-from src.database.models import AnalysisJob, AnalysisResult, CrisisAlert, CollectedPost, JobStatus
+from src.database.models import (
+    AnalysisJob,
+    AnalysisResult,
+    CrisisAlert,
+    CollectedPost,
+    JobStatus,
+)
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
 
 async def _seed_job(db_session, *, status=JobStatus.DONE, brand="TestBrand"):
     """Insert a complete job + result so GET endpoints have data."""
@@ -36,7 +43,15 @@ async def _seed_job(db_session, *, status=JobStatus.DONE, brand="TestBrand"):
             job_id=job_id,
             brand_name=brand,
             sentiment_distribution={"positive": 0.5, "negative": 0.2, "neutral": 0.3},
-            aspect_results={"product": {"count": 10, "positive": 0.6, "negative": 0.2, "neutral": 0.2, "avg_intensity": 0.4}},
+            aspect_results={
+                "product": {
+                    "count": 10,
+                    "positive": 0.6,
+                    "negative": 0.2,
+                    "neutral": 0.2,
+                    "avg_intensity": 0.4,
+                }
+            },
             insight_summary="Test insight",
             crisis_score=0.3,
             crisis_triggered=0,
@@ -67,6 +82,7 @@ async def _seed_alert(db_session, *, brand="TestBrand"):
 
 # ── POST /api/analyze ────────────────────────────────────────────────────────
 
+
 class TestPostAnalyze:
     from unittest.mock import patch, AsyncMock
 
@@ -75,31 +91,41 @@ class TestPostAnalyze:
             "src.api.routers.analysis.run_collection_pipeline",
             new=AsyncMock(return_value=None),
         ):
-            resp = await client.post("/api/analyze", json={
-                "brand_name": "Nike",
-                "platforms": ["reddit"],
-            })
+            resp = await client.post(
+                "/api/analyze",
+                json={
+                    "brand_name": "Nike",
+                    "platforms": ["reddit"],
+                },
+            )
         assert resp.status_code == 202
         body = resp.json()
         assert "job_id" in body
         assert len(body["job_id"]) == 36  # UUID format
 
     async def test_empty_brand_name_rejected(self, client):
-        resp = await client.post("/api/analyze", json={
-            "brand_name": "   ",
-            "platforms": ["reddit"],
-        })
+        resp = await client.post(
+            "/api/analyze",
+            json={
+                "brand_name": "   ",
+                "platforms": ["reddit"],
+            },
+        )
         assert resp.status_code == 422
 
     async def test_invalid_platform_rejected(self, client):
-        resp = await client.post("/api/analyze", json={
-            "brand_name": "Nike",
-            "platforms": ["tiktok"],
-        })
+        resp = await client.post(
+            "/api/analyze",
+            json={
+                "brand_name": "Nike",
+                "platforms": ["tiktok"],
+            },
+        )
         assert resp.status_code == 422
 
 
 # ── GET /api/status/{id} ─────────────────────────────────────────────────────
+
 
 class TestGetStatus:
     async def test_404_on_unknown_job(self, client):
@@ -118,6 +144,7 @@ class TestGetStatus:
 
 
 # ── GET /api/results/{id} ────────────────────────────────────────────────────
+
 
 class TestGetResults:
     async def test_404_on_unknown_job(self, client):
@@ -144,6 +171,7 @@ class TestGetResults:
 
 # ── GET /api/brands ──────────────────────────────────────────────────────────
 
+
 class TestGetBrands:
     async def test_returns_200_list(self, client):
         resp = await client.get("/api/brands")
@@ -162,6 +190,7 @@ class TestGetBrands:
 
 # ── GET /api/alerts ──────────────────────────────────────────────────────────
 
+
 class TestGetAlerts:
     async def test_returns_200_list(self, client):
         resp = await client.get("/api/alerts")
@@ -179,6 +208,7 @@ class TestGetAlerts:
 
 # ── PATCH /api/alerts/{id}/acknowledge ────────────────────────────────────────
 
+
 class TestAcknowledgeAlert:
     async def test_404_on_unknown_alert(self, client):
         resp = await client.patch("/api/alerts/99999/acknowledge")
@@ -193,6 +223,7 @@ class TestAcknowledgeAlert:
 
 
 # ── GET /health ──────────────────────────────────────────────────────────────
+
 
 class TestHealth:
     async def test_returns_200_ok(self, client):

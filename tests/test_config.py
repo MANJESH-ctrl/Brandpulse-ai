@@ -21,6 +21,7 @@ class TestMissingGroqKey:
         }
         with patch.dict(os.environ, env, clear=True):
             from src.utils.config import Settings
+
             with pytest.raises(ValidationError):
                 Settings(_env_file=None)
 
@@ -36,6 +37,7 @@ class TestMissingDatabaseUrl:
         }
         with patch.dict(os.environ, env, clear=True):
             from src.utils.config import Settings
+
             with pytest.raises(ValidationError):
                 Settings(_env_file="nonexistent_file_that_doesnt_exist.env")
 
@@ -52,6 +54,7 @@ class TestDefaultValues:
         }
         with patch.dict(os.environ, env, clear=True):
             from src.utils.config import Settings
+
             s = Settings(_env_file=None)
             assert s.app_name == "BrandPulse AI"
             assert s.app_version == "0.2.0"

@@ -44,9 +44,7 @@ async def acknowledge_alert(
     alert_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(CrisisAlert).where(CrisisAlert.id == alert_id)
-    )
+    result = await db.execute(select(CrisisAlert).where(CrisisAlert.id == alert_id))
     alert = result.scalar_one_or_none()
     if not alert:
         raise HTTPException(status_code=404, detail=f"Alert {alert_id} not found")

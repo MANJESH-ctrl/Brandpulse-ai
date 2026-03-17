@@ -22,6 +22,7 @@ for k, v in _FAKE_ENV.items():
 
 # Clear the lru_cache so Settings re-reads env vars
 from src.utils.config import get_settings
+
 get_settings.cache_clear()
 
 import pytest
@@ -35,7 +36,9 @@ from src.database.session import get_db
 
 # ── In-memory async engine shared across the test session ────────────────────
 _test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", future=True)
-_TestSession = async_sessionmaker(bind=_test_engine, class_=AsyncSession, expire_on_commit=False)
+_TestSession = async_sessionmaker(
+    bind=_test_engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 @pytest.fixture(autouse=True)

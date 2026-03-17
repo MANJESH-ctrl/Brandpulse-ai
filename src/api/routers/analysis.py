@@ -7,7 +7,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from src.api.schemas import AnalyzeRequest, AnalyzeResponse, JobStatusResponse, PostsResponse
+from src.api.schemas import (
+    AnalyzeRequest,
+    AnalyzeResponse,
+    JobStatusResponse,
+    PostsResponse,
+)
 from src.database.models import AnalysisJob, CollectedPost, JobStatus
 from src.database.session import get_db, AsyncSessionLocal
 from src.data.collectors import RedditCollector, YouTubeCollector, HackerNewsCollector
@@ -18,6 +23,7 @@ logger = get_logger(__name__)
 
 
 # ── API Endpoints ─────────────────────────────────────────────────────────────
+
 
 @router.post("/analyze", response_model=AnalyzeResponse, status_code=202)
 async def start_analysis(
@@ -82,7 +88,9 @@ async def get_collected_posts(
     job = job_result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
-    posts_result = await db.execute(select(CollectedPost).where(CollectedPost.job_id == job_id))
+    posts_result = await db.execute(
+        select(CollectedPost).where(CollectedPost.job_id == job_id)
+    )
     posts = posts_result.scalars().all()
     breakdown: dict[str, int] = {}
     for post in posts:
@@ -94,19 +102,21 @@ async def get_collected_posts(
         platform_breakdown=breakdown,
         posts=[
             {
-                "id":                  p.id,
-                "platform":            p.platform,
-                "title":               p.title,
-                "text":                p.text[:300] + "..." if p.text and len(p.text) > 300 else p.text,
-                "sentiment":           p.sentiment,
-                "confidence":          p.confidence,
-                "positive_score":      p.positive_score,
-                "negative_score":      p.negative_score,
-                "neutral_score":       p.neutral_score,
+                "id": p.id,
+                "platform": p.platform,
+                "title": p.title,
+                "text": p.text[:300] + "..."
+                if p.text and len(p.text) > 300
+                else p.text,
+                "sentiment": p.sentiment,
+                "confidence": p.confidence,
+                "positive_score": p.positive_score,
+                "negative_score": p.negative_score,
+                "neutral_score": p.neutral_score,
                 "emotional_intensity": p.emotional_intensity,
-                "engagement_score":    p.engagement_score,
-                "platform_meta":       p.platform_meta,
-                "collected_at":        p.collected_at.isoformat(),
+                "engagement_score": p.engagement_score,
+                "platform_meta": p.platform_meta,
+                "collected_at": p.collected_at.isoformat(),
             }
             for p in posts
         ],
@@ -114,6 +124,7 @@ async def get_collected_posts(
 
 
 # ── Background Pipeline ───────────────────────────────────────────────────────
+
 
 async def _update_job(
     job_id: str,
@@ -145,19 +156,29 @@ async def run_collection_pipeline(
     from src.agents import run_analysis_graph
     from src.database.models import AnalysisResult, CrisisAlert
 
-    logger.info("pipeline_started", job_id=job_id, brand=brand_name, platforms=platforms)
+    logger.info(
+        "pipeline_started", job_id=job_id, brand=brand_name, platforms=platforms
+    )
 
     try:
         # ── Step 1: Collect ───────────────────────────────────────────────
-        await _update_job(job_id, JobStatus.COLLECTING, f"Collecting from {', '.join(platforms)}...")
+        await _update_job(
+            job_id, JobStatus.COLLECTING, f"Collecting from {', '.join(platforms)}..."
+        )
 
         collector_tasks = []
         if "reddit" in platforms:
-            collector_tasks.append(RedditCollector().collect(brand_name, keywords, limit))
+            collector_tasks.append(
+                RedditCollector().collect(brand_name, keywords, limit)
+            )
         if "youtube" in platforms:
-            collector_tasks.append(YouTubeCollector().collect(brand_name, keywords, limit))
+            collector_tasks.append(
+                YouTubeCollector().collect(brand_name, keywords, limit)
+            )
         if "hackernews" in platforms:
-            collector_tasks.append(HackerNewsCollector().collect(brand_name, keywords, limit))
+            collector_tasks.append(
+                HackerNewsCollector().collect(brand_name, keywords, limit)
+            )
 
         results = await asyncio.gather(*collector_tasks, return_exceptions=True)
 
@@ -170,7 +191,8 @@ async def run_collection_pipeline(
 
         if not all_posts:
             await _update_job(
-                job_id, JobStatus.FAILED,
+                job_id,
+                JobStatus.FAILED,
                 "No posts collected — check API keys or try a different brand name.",
                 error="Zero posts collected",
                 completed=True,
@@ -179,7 +201,8 @@ async def run_collection_pipeline(
 
         # ── Step 2: Store raw posts ───────────────────────────────────────
         await _update_job(
-            job_id, JobStatus.PROCESSING,
+            job_id,
+            JobStatus.PROCESSING,
             f"Collected {len(all_posts)} posts. Running analysis...",
         )
 
@@ -199,7 +222,8 @@ async def run_collection_pipeline(
 
         # ── Step 3: Run LangGraph analysis pipeline ───────────────────────
         await _update_job(
-            job_id, JobStatus.ANALYZING,
+            job_id,
+            JobStatus.ANALYZING,
             f"Analyzing {len(all_posts)} posts with AI pipeline...",
         )
 
@@ -212,28 +236,27 @@ async def run_collection_pipeline(
             )
             db_posts = posts_result.scalars().all()
 
-            # ID-based matching 
+            # ID-based matching
             analyzed_map = {
-                p.get("id", ""): p
-                for p in final_state.get("analyzed_posts", [])
+                p.get("id", ""): p for p in final_state.get("analyzed_posts", [])
             }
 
             for db_post in db_posts:
                 analyzed = analyzed_map.get(db_post.source_id)
                 if analyzed:
-                    db_post.cleaned_text        = analyzed.get("combined_text", "")
-                    db_post.sentiment           = analyzed.get("sentiment")
-                    db_post.confidence          = analyzed.get("confidence")
-                    db_post.positive_score      = analyzed.get("positive_score")
-                    db_post.negative_score      = analyzed.get("negative_score")
-                    db_post.neutral_score       = analyzed.get("neutral_score")
+                    db_post.cleaned_text = analyzed.get("combined_text", "")
+                    db_post.sentiment = analyzed.get("sentiment")
+                    db_post.confidence = analyzed.get("confidence")
+                    db_post.positive_score = analyzed.get("positive_score")
+                    db_post.negative_score = analyzed.get("negative_score")
+                    db_post.neutral_score = analyzed.get("neutral_score")
                     db_post.emotional_intensity = analyzed.get("emotional_intensity")
-                    db_post.engagement_score    = analyzed.get("engagement_score")
-                    db_post.is_sarcastic        = 1 if analyzed.get("is_sarcastic") else 0
-                    db_post.aspect              = analyzed.get("aspect")
-                    db_post.brand_relevance     = analyzed.get("brand_relevance")
-                    db_post.intensity           = analyzed.get("intensity")
-                    db_post.sentiment_reason    = analyzed.get("sentiment_reason")
+                    db_post.engagement_score = analyzed.get("engagement_score")
+                    db_post.is_sarcastic = 1 if analyzed.get("is_sarcastic") else 0
+                    db_post.aspect = analyzed.get("aspect")
+                    db_post.brand_relevance = analyzed.get("brand_relevance")
+                    db_post.intensity = analyzed.get("intensity")
+                    db_post.sentiment_reason = analyzed.get("sentiment_reason")
 
             await db.commit()
 
@@ -272,8 +295,8 @@ async def run_collection_pipeline(
         dist = final_state.get("sentiment_distribution", {})
         progress_msg = (
             f"Analysis complete — {final_state.get('total_posts', 0)} posts. "
-            f"Sentiment: {dist.get('positive', 0)*100:.0f}% positive, "
-            f"{dist.get('negative', 0)*100:.0f}% negative."
+            f"Sentiment: {dist.get('positive', 0) * 100:.0f}% positive, "
+            f"{dist.get('negative', 0) * 100:.0f}% negative."
         )
         if final_state.get("crisis_triggered"):
             progress_msg += " ⚠️ Crisis alert triggered."
@@ -291,7 +314,8 @@ async def run_collection_pipeline(
     except Exception as e:
         logger.error("pipeline_crashed", job_id=job_id, error=str(e), exc_info=True)
         await _update_job(
-            job_id, JobStatus.FAILED,
+            job_id,
+            JobStatus.FAILED,
             f"Pipeline failed: {str(e)}",
             error=str(e),
             completed=True,

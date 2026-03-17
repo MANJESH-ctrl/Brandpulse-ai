@@ -60,8 +60,6 @@ class PostsResponse(BaseModel):
     posts: list[dict[str, Any]]
 
 
-
-
 class AspectData(BaseModel):
     count: int
     positive: float
@@ -85,7 +83,6 @@ class FullAnalysisResult(BaseModel):
     created_at: str
     completed_at: str | None
     model_used: str | None = None
-
 
 
 class BrandSummary(BaseModel):

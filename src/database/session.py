@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.debug,   
+    echo=settings.debug,
     future=True,
 )
 

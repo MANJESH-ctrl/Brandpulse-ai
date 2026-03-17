@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     app_name: str = "BrandPulse AI"
     app_version: str = "0.2.0"
     debug: bool = False
-    log_level: str = "INFO" 
+    log_level: str = "INFO"
 
     # ── Database ──────────────────────────────────────────────────────────────
-    database_url: str 
+    database_url: str
 
     # ── Groq ──────────────────────────────────────────────────────────────────
     groq_api_key: str

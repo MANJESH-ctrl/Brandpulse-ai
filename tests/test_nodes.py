@@ -40,11 +40,24 @@ def _base_state(**overrides):
 
 # ── node_process_text: deduplication ─────────────────────────────────────────
 
+
 class TestNodeProcessText:
     def test_deduplication(self):
         posts = [
-            {"id": "1", "platform": "reddit", "title": "Duplicate title here for testing", "text": "body text here", "platform_meta": {}},
-            {"id": "2", "platform": "reddit", "title": "Duplicate title here for testing", "text": "body text here", "platform_meta": {}},
+            {
+                "id": "1",
+                "platform": "reddit",
+                "title": "Duplicate title here for testing",
+                "text": "body text here",
+                "platform_meta": {},
+            },
+            {
+                "id": "2",
+                "platform": "reddit",
+                "title": "Duplicate title here for testing",
+                "text": "body text here",
+                "platform_meta": {},
+            },
         ]
         state = _base_state(raw_posts=posts)
         result = node_process_text(state)
@@ -52,8 +65,20 @@ class TestNodeProcessText:
 
     def test_short_text_dropped(self):
         posts = [
-            {"id": "1", "platform": "reddit", "title": "", "text": "hi", "platform_meta": {}},
-            {"id": "2", "platform": "reddit", "title": "This is a valid long enough title", "text": "with enough body", "platform_meta": {}},
+            {
+                "id": "1",
+                "platform": "reddit",
+                "title": "",
+                "text": "hi",
+                "platform_meta": {},
+            },
+            {
+                "id": "2",
+                "platform": "reddit",
+                "title": "This is a valid long enough title",
+                "text": "with enough body",
+                "platform_meta": {},
+            },
         ]
         state = _base_state(raw_posts=posts)
         result = node_process_text(state)
@@ -61,9 +86,27 @@ class TestNodeProcessText:
 
     def test_platform_breakdown_counted(self):
         posts = [
-            {"id": "1", "platform": "reddit", "title": "Reddit post about something", "text": "body text here", "platform_meta": {}},
-            {"id": "2", "platform": "youtube", "title": "YouTube post about something", "text": "body text here", "platform_meta": {}},
-            {"id": "3", "platform": "hackernews", "title": "HN post about something new", "text": "body text here", "platform_meta": {}},
+            {
+                "id": "1",
+                "platform": "reddit",
+                "title": "Reddit post about something",
+                "text": "body text here",
+                "platform_meta": {},
+            },
+            {
+                "id": "2",
+                "platform": "youtube",
+                "title": "YouTube post about something",
+                "text": "body text here",
+                "platform_meta": {},
+            },
+            {
+                "id": "3",
+                "platform": "hackernews",
+                "title": "HN post about something new",
+                "text": "body text here",
+                "platform_meta": {},
+            },
         ]
         state = _base_state(raw_posts=posts)
         result = node_process_text(state)
@@ -73,8 +116,13 @@ class TestNodeProcessText:
 
     def test_engagement_score_added(self):
         posts = [
-            {"id": "1", "platform": "reddit", "title": "A valid post title long enough", "text": "some text body",
-             "platform_meta": {"score": 500, "num_comments": 100}},
+            {
+                "id": "1",
+                "platform": "reddit",
+                "title": "A valid post title long enough",
+                "text": "some text body",
+                "platform_meta": {"score": 500, "num_comments": 100},
+            },
         ]
         state = _base_state(raw_posts=posts)
         result = node_process_text(state)
@@ -84,6 +132,7 @@ class TestNodeProcessText:
 
 
 # ── _clean_text ──────────────────────────────────────────────────────────────
+
 
 class TestCleanText:
     def test_removes_urls(self):
@@ -110,6 +159,7 @@ class TestCleanText:
 
 
 # ── _compute_engagement ──────────────────────────────────────────────────────
+
 
 class TestComputeEngagement:
     def test_reddit_formula(self):
@@ -154,6 +204,7 @@ class TestComputeEngagement:
 
 # ── node_detect_crisis ───────────────────────────────────────────────────────
 
+
 class TestNodeDetectCrisis:
     def test_high_negative_triggers_crisis(self):
         """crisis_score >= 1.0 when negative >= 0.60 (CRISIS_THRESHOLD)."""
@@ -190,8 +241,20 @@ class TestNodeDetectCrisis:
         state = _base_state(
             sentiment_distribution={"positive": 0.1, "negative": 0.7, "neutral": 0.2},
             aspect_results={
-                "pricing": {"count": 10, "positive": 0.1, "negative": 0.8, "neutral": 0.1, "avg_intensity": 0.7},
-                "product": {"count": 5, "positive": 0.6, "negative": 0.2, "neutral": 0.2, "avg_intensity": 0.4},
+                "pricing": {
+                    "count": 10,
+                    "positive": 0.1,
+                    "negative": 0.8,
+                    "neutral": 0.1,
+                    "avg_intensity": 0.7,
+                },
+                "product": {
+                    "count": 5,
+                    "positive": 0.6,
+                    "negative": 0.2,
+                    "neutral": 0.2,
+                    "avg_intensity": 0.4,
+                },
             },
         )
         result = node_detect_crisis(state)

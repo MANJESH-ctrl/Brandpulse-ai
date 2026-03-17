@@ -24,9 +24,7 @@ async def get_analysis_result(
     Returns sentiment distribution, aspect breakdown, insights, crisis score.
     """
     # Fetch job
-    job_result = await db.execute(
-        select(AnalysisJob).where(AnalysisJob.id == job_id)
-    )
+    job_result = await db.execute(select(AnalysisJob).where(AnalysisJob.id == job_id))
     job = job_result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
@@ -34,7 +32,7 @@ async def get_analysis_result(
     if job.status != JobStatus.DONE:
         raise HTTPException(
             status_code=400,
-            detail=f"Job is not complete yet. Current status: {job.status}"
+            detail=f"Job is not complete yet. Current status: {job.status}",
         )
 
     # Fetch result
@@ -45,7 +43,7 @@ async def get_analysis_result(
     if not result:
         raise HTTPException(
             status_code=404,
-            detail="Analysis result not found. Job may have failed during processing."
+            detail="Analysis result not found. Job may have failed during processing.",
         )
 
     dist = result.sentiment_distribution or {}
@@ -80,9 +78,7 @@ async def get_sentiment_breakdown_by_platform(
     Returns data ready for Streamlit bar/pie charts.
     """
 
-    job_result = await db.execute(
-        select(AnalysisJob).where(AnalysisJob.id == job_id)
-    )
+    job_result = await db.execute(select(AnalysisJob).where(AnalysisJob.id == job_id))
     job = job_result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
@@ -97,9 +93,16 @@ async def get_sentiment_breakdown_by_platform(
     for post in posts:
         platform = post.platform
         if platform not in breakdown:
-            breakdown[platform] = {"positive": 0, "negative": 0, "neutral": 0, "total": 0}
+            breakdown[platform] = {
+                "positive": 0,
+                "negative": 0,
+                "neutral": 0,
+                "total": 0,
+            }
         if post.sentiment:
-            breakdown[platform][post.sentiment] = breakdown[platform].get(post.sentiment, 0) + 1
+            breakdown[platform][post.sentiment] = (
+                breakdown[platform].get(post.sentiment, 0) + 1
+            )
             breakdown[platform]["total"] += 1
 
     # Compute percentages
@@ -120,5 +123,3 @@ async def get_sentiment_breakdown_by_platform(
         "brand_name": job.brand_name,
         "platform_sentiment": result,
     }
-
-
