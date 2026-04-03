@@ -2,7 +2,7 @@
 
 **AI-powered brand sentiment intelligence platform.** Give it a brand name, it scrapes Reddit, YouTube, and Hacker News, runs every post through an LLM sentiment pipeline, detects crises, and generates actionable intelligence reports — automatically, end to end.
 
-Live at: `http://3.109.12.0:8000`
+Live at: <http://3.109.12.0:8000>
 
 ---
 
